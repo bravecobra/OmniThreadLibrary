@@ -363,6 +363,9 @@ interface
   {$IF CompilerVersion >= 23} // Delphi XE2
     {$DEFINE GpLists_HasSystemTypes}
   {$IFEND}
+  {$IF CompilerVersion >= 24} // Delphi XE3
+    {$DEFINE GpLists_HasAtomic}
+  {$IFEND}
   {$IF CompilerVersion >= 33} // Delphi 10.3 Rio
     {$DEFINE GpLists_HasGrowCollection}
   {$IFEND}
@@ -957,7 +960,9 @@ type
     procedure Delete(idx: integer);
     function  Dump(baseAddr: pointer): pointer;
     function  EnsureObject(item: integer; obj: TObject): integer; overload;
+    {$IFDEF UNICODE}
     function  EnsureObject(item: integer; objClass: TClass): integer; overload;
+    {$ENDIF UNICODE}
     procedure Exchange(idx1, idx2: integer);
     function  ExtractObject(idxObject: integer): TObject;
     function  FetchObject(item: integer): TObject;
@@ -1000,7 +1005,9 @@ type
     function  Dump(baseAddr: pointer): pointer; override;
     function  Ensure(item: integer): integer; override;
     function  EnsureObject(item: integer; obj: TObject): integer; overload; virtual;
+    {$IFDEF UNICODE}
     function  EnsureObject(item: integer; objClass: TClass): integer; overload; virtual;
+    {$ENDIF UNICODE}
     procedure Exchange(idx1, idx2: integer); override;
     function  ExtractObject(idxObject: integer): TObject; virtual;
     function  FetchObject(item: integer): TObject; virtual;
@@ -1163,7 +1170,9 @@ type
     procedure Delete(idx: integer);
     function  Dump(baseAddr: pointer): pointer;
     function  EnsureObject(item: int64; obj: TObject): integer; overload;
+    {$IFDEF UNICODE}
     function  EnsureObject(item: int64; objClass: TClass): integer; overload;
+    {$ENDIF UNICODE}
     procedure Exchange(idx1, idx2: integer);
     function  ExtractObject(idxObject: integer): TObject;
     function  FetchObject(item: int64): TObject;
@@ -1201,7 +1210,9 @@ type
     function  Dump(baseAddr: pointer): pointer; override;
     function  Ensure(item: int64): integer; override;
     function  EnsureObject(item: int64; obj: TObject): integer; overload; virtual;
+    {$IFDEF UNICODE}
     function  EnsureObject(item: int64; objClass: TClass): integer; overload; virtual;
+    {$ENDIF UNICODE}
     procedure Exchange(idx1, idx2: integer); override;
     function  ExtractObject(idxObject: integer): TObject;
     function  FetchObject(item: int64): TObject;
@@ -2674,6 +2685,10 @@ type
 function MyGrowCollection(OldCapacity, NewCount: integer): integer;
 {$ENDIF}
 
+{$IFNDEF xGpLists_HasAtomic} // used in an inline function, must be exported
+function InterlockedAdd(var Target: Integer; Value: Integer): Integer;
+{$ENDIF}
+
 implementation
 
 uses
@@ -2692,6 +2707,18 @@ type
 {$ENDIF}
 
 { publics }
+
+{$IFNDEF xGpLists_HasAtomic}
+function InterlockedAdd(var Target: Integer; Value: Integer): Integer;
+var OldValue: Integer;
+begin
+  repeat
+    OldValue := Target;
+    Result := InterlockedCompareExchange(Target, OldValue + Value, OldValue);
+  until Result = OldValue;
+  Result := OldValue;
+end;
+{$ENDIF xGpLists_HasAtomic}
 
 function IntegerCompare(avalue1, avalue2: integer): integer;
 begin
@@ -4303,6 +4330,7 @@ begin
     Objects[Result] := obj;
 end; { TGpIntegerObjectList.EnsureObject }
 
+{$IFDEF UNICODE}
 function TGpIntegerObjectList.EnsureObject(item: integer; objClass: TClass): integer;
 begin
   Result := IndexOf(item);
@@ -4311,6 +4339,7 @@ begin
   else if not assigned(Objects[Result]) then
     Objects[Result] := objClass.Create();
 end; { TGpIntegerObjectList.EnsureObject }
+{$ENDIF UNICODE}
 
 procedure TGpIntegerObjectList.Exchange(idx1, idx2: integer);
 begin
@@ -4887,6 +4916,7 @@ begin
     Objects[Result] := obj;
 end; { TGpInt64ObjectList.EnsureObject }
 
+{$IFDEF UNICODE}
 function TGpInt64ObjectList.EnsureObject(item: int64; objClass: TClass): integer;
 begin
  Result := IndexOf(item);
@@ -4895,6 +4925,7 @@ begin
   else if not assigned(Objects[Result]) then
     Objects[Result] := objClass.Create();
 end; { TGpInt64ObjectList.EnsureObject }
+{$ENDIF UNICODE}
 
 procedure TGpInt64ObjectList.Exchange(idx1, idx2: integer);
 begin
@@ -6489,6 +6520,8 @@ end; { TGpObjectRingBuffer.Dequeue }
 }
 function TGpObjectRingBuffer.Enqueue(obj: TObject): boolean;
 begin
+{$IFDEF MSWINDOWS}
+{$WARN SYMBOL_PLATFORM OFF}
   Lock;
   try
     if InternalIsFull then
@@ -6502,6 +6535,8 @@ begin
       Result := true;
     end;
   finally Unlock; end;
+{$WARN SYMBOL_PLATFORM ON}
+{$ENDIF}
 end; { TGpObjectRingBuffer.Enqueue }
 
 function TGpObjectRingBuffer.GetBufferAlmostEmptyEvent: THandle;
@@ -6575,6 +6610,8 @@ end; { TGpObjectRingBuffer.InternalIsFull }
 
 function TGpObjectRingBuffer.InternalDequeue: TObject;
 begin
+{$IFDEF MSWINDOWS}
+{$WARN SYMBOL_PLATFORM OFF}
   if IsEmpty then
     Result := nil
   else begin
@@ -6584,6 +6621,8 @@ begin
     if (BufferAlmostEmptyEvent <> 0) and (BufferAlmostEmptyThreshold = orbCount) then
       Win32Check(SetEvent(BufferAlmostEmptyEvent));
   end;
+{$WARN SYMBOL_PLATFORM ON}
+{$ENDIF}
 end; { TGpObjectRingBuffer.InternalDequeue }
 
 {:Checks whether the buffer is empty.
@@ -6751,6 +6790,8 @@ end; { TGpRingBuffer }
 }
 function TGpRingBuffer<T>.Enqueue(const item: T): boolean;
 begin
+{$IFDEF MSWINDOWS}
+{$WARN SYMBOL_PLATFORM OFF}
   Lock;
   try
     if InternalIsFull then
@@ -6764,6 +6805,8 @@ begin
       Result := true;
     end;
   finally Unlock; end;
+{$WARN SYMBOL_PLATFORM ON}
+{$ENDIF}
 end; { TGpRingBuffer<T>.Enqueue }
 
 function TGpRingBuffer<T>.GetBufferAlmostEmptyEvent: THandle;
@@ -6829,6 +6872,8 @@ end; { TGpRingBuffer<T>.InternalIsFull }
 
 function TGpRingBuffer<T>.InternalDequeue(var item: T): boolean;
 begin
+{$IFDEF MSWINDOWS}
+{$WARN SYMBOL_PLATFORM OFF}
   Result := not IsEmpty;
   if Result then begin
     item := orbBuffer[orbTail];
@@ -6837,6 +6882,8 @@ begin
     if (BufferAlmostEmptyEvent <> 0) and (BufferAlmostEmptyThreshold = orbCount) then
       Win32Check(SetEvent(BufferAlmostEmptyEvent));
   end;
+{$WARN SYMBOL_PLATFORM ON}
+{$ENDIF}
 end; { TGpRingBuffer<T>.InternalDequeue }
 
 {:Checks whether the buffer is empty.
@@ -7589,7 +7636,7 @@ end; { TGpFifoBuffer.Destroy }
 procedure TGpFifoBuffer.AddBlock(block: TFifoBlock);
 begin
   FFifo.InsertAtTail(block);
-  InterlockedAdd(FCurrentSize, block.Size);
+  {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, block.Size);
   Assert(InterlockedCompareExchange(FCurrentSize, 0, 0) <= InterlockedCompareExchange(FMaxSize, 0, 0));
 end; { TGpFifoBuffer.AddBlock }
 
@@ -7716,7 +7763,7 @@ begin
         if FActiveBlockInUse then begin
           Assert(not doNotSplitBlocks, 'Internal error');
           readSize := data.CopyFrom(FActiveBlock, Min(FActiveBlock.Size - FActiveBlock.Position, maxSize - Result));
-          InterlockedAdd(FCurrentSize, -readSize);
+          {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -readSize);
           Inc(Result, readSize);
           if FActiveBlock.Position >= FActiveBlock.Size then
             FActiveBlockInUse := false
@@ -7760,7 +7807,7 @@ begin
       end;
     end
     else begin
-      InterlockedAdd(FCurrentSize, -block.Size);
+      {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -block.Size);
       data.Write(block.Data^, block.Size);
       Inc(Result, block.Size);
     end;
@@ -7786,7 +7833,7 @@ begin
         if FActiveBlockInUse then begin
           Assert(not doNotSplitBlocks, 'Internal error');
           readSize := FActiveBlock.Read(outp^, Min(FActiveBlock.Size - FActiveBlock.Position, maxSize - Result));
-          InterlockedAdd(FCurrentSize, -readSize);
+          {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -readSize);
           Inc(Result, readSize);
           outp := pointer(int64(outp) + readSize);
           if FActiveBlock.Position >= FActiveBlock.Size then
@@ -7832,7 +7879,7 @@ begin
     end
     else begin
       Move(block.Data^, outp^, block.Size);
-      InterlockedAdd(FCurrentSize, -block.Size);
+      {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -block.Size);
       Inc(Result, block.Size);
       outp := pointer(int64(outp) + block.Size);
     end;
@@ -7891,7 +7938,7 @@ begin
           sizeDiff := FActiveBlock.Size - FActiveBlock.Position;
           FActiveBlock.Size := Min(FActiveBlock.Size, Size);
           Dec(sizeDiff, FActiveBlock.Size - FActiveBlock.Position);
-          InterlockedAdd(FCurrentSize, -sizeDiff);
+          {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -sizeDiff);
         end;
       finally
         if FThreadSafe then
@@ -7899,7 +7946,7 @@ begin
       end;
       break; //while
     end;
-    InterlockedAdd(FCurrentSize, -block.Size);
+    {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -block.Size);
     ReleaseBlock(block);
   end;
   Assert(InterlockedCompareExchange(FCurrentSize, 0, 0) >= 0);

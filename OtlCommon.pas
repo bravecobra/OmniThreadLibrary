@@ -2235,7 +2235,9 @@ begin
     ovtInteger,
     ovtInt64:   value := ovData;
     ovtNull:    value := 0;
+    {$IFDEF OTL_VariantHasInt64}
     ovtVariant: value := int64(AsVariant);
+    {$ENDIF OTL_VariantHasInt64}
     else Result := false;
   end;
 end; { TOmniValue.TryGetAsInt64 }
@@ -2247,7 +2249,9 @@ begin
     ovtInteger: value := ovData;
     ovtInt64:   value := uint64(ovData);
     ovtNull:    value := 0;
+    {$IFDEF OTL_VariantHasInt64}
     ovtVariant: value := uint64(AsVariant);
+    {$ENDIF OTL_VariantHasInt64}
     else Result := false;
   end;
 end; { TOmniValue.TryCastToUInt64 }

@@ -99,6 +99,7 @@
   {$DEFINE OTL_Supports64Bit}
   {$DEFINE OTL_HasSystemTypes}
   {$DEFINE OTL_HasCorrectNativeInt}
+  {$DEFINE OTL_VariantHasInt64}
 {$IFEND}
 
 {$IF CompilerVersion >= 24} //DXE3
