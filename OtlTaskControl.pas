@@ -4276,8 +4276,10 @@ var
   Idx        : integer;
   {$ENDIF ~MSWINDOWS}
 begin
-  if otgTaskList.Count = 0 then
-    Exit(true);
+  if otgTaskList.Count = 0 then begin
+    Result := true;
+    Exit;
+  end;
 
   {$IFDEF MSWINDOWS}
   SetLength(waitHandles, otgTaskList.Count);
