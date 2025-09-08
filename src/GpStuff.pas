@@ -1637,14 +1637,16 @@ constructor TBMSearch.Create(const pattern: IGpBuffer; ignoreCase: boolean);
 var
   i: integer;
 begin
+  Assert(pattern.Size >= 2);
+
   for i:= Low(FShiftTable) to High(FShiftTable) do
     FShiftTable[i] := pattern.Size;
 
   if ignoreCase then
-    for i := 0 to pattern.Size- 2 do
+    for i := 0 to pattern.Size - 2 do
       FShiftTable[UC(pattern[i])] := pattern.Size - i - 1
   else
-    for i := 0 to pattern.Size- 2 do
+    for i := 0 to pattern.Size - 2 do
       FShiftTable[pattern[i]] := pattern.Size - i - 1;
 
   FPattern := pattern;
