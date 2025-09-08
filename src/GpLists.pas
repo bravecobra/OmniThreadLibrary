@@ -7771,7 +7771,11 @@ begin
         if FActiveBlockInUse then begin
           Assert(not doNotSplitBlocks, 'Internal error');
           readSize := data.CopyFrom(FActiveBlock, Min(FActiveBlock.Size - FActiveBlock.Position, maxSize - Result));
-          {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -readSize);
+          {$IFDEF GpLists_HasAtomic}
+          AtomicDecrement(FCurrentSize, readSize);
+          {$ELSE}
+          InterlockedAdd(FCurrentSize, -readSize);
+          {$ENDIF}
           Inc(Result, readSize);
           if FActiveBlock.Position >= FActiveBlock.Size then
             FActiveBlockInUse := false
@@ -7815,7 +7819,11 @@ begin
       end;
     end
     else begin
-      {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -block.Size);
+      {$IFDEF GpLists_HasAtomic}
+      AtomicDecrement(FCurrentSize, block.Size);
+      {$ELSE}
+      InterlockedAdd(FCurrentSize, -block.Size);
+      {$ENDIF}
       data.Write(block.Data^, block.Size);
       Inc(Result, block.Size);
     end;
@@ -7841,7 +7849,11 @@ begin
         if FActiveBlockInUse then begin
           Assert(not doNotSplitBlocks, 'Internal error');
           readSize := FActiveBlock.Read(outp^, Min(FActiveBlock.Size - FActiveBlock.Position, maxSize - Result));
-          {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -readSize);
+          {$IFDEF GpLists_HasAtomic}
+          AtomicDecrement(FCurrentSize, readSize);
+          {$ELSE}
+          InterlockedAdd(FCurrentSize, -readSize);
+          {$ENDIF}
           Inc(Result, readSize);
           outp := pointer(int64(outp) + readSize);
           if FActiveBlock.Position >= FActiveBlock.Size then
@@ -7887,7 +7899,11 @@ begin
     end
     else begin
       Move(block.Data^, outp^, block.Size);
-      {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -block.Size);
+      {$IFDEF GpLists_HasAtomic}
+      AtomicDecrement(FCurrentSize, block.Size);
+      {$ELSE}
+      InterlockedAdd(FCurrentSize, -block.Size);
+      {$ENDIF}
       Inc(Result, block.Size);
       outp := pointer(int64(outp) + block.Size);
     end;
@@ -7946,7 +7962,11 @@ begin
           sizeDiff := FActiveBlock.Size - FActiveBlock.Position;
           FActiveBlock.Size := Min(FActiveBlock.Size, Size);
           Dec(sizeDiff, FActiveBlock.Size - FActiveBlock.Position);
-          {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -sizeDiff);
+          {$IFDEF GpLists_HasAtomic}
+          AtomicDecrement(FCurrentSize, sizeDiff);
+          {$ELSE}
+          InterlockedAdd(FCurrentSize, -sizeDiff);
+          {$ENDIF}
         end;
       finally
         if FThreadSafe then
@@ -7954,7 +7974,11 @@ begin
       end;
       break; //while
     end;
-    {$IFDEF GpLists_HasAtomic}AtomicIncrement{$ELSE}InterlockedAdd{$ENDIF}(FCurrentSize, -block.Size);
+    {$IFDEF GpLists_HasAtomic}
+    AtomicDecrement(FCurrentSize, block.Size);
+    {$ELSE}
+    InterlockedAdd(FCurrentSize, -block.Size);
+    {$ENDIF}
     ReleaseBlock(block);
   end;
   Assert(InterlockedCompareExchange(FCurrentSize, 0, 0) >= 0);

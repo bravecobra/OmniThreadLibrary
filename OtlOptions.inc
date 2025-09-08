@@ -99,13 +99,13 @@
   {$DEFINE OTL_Supports64Bit}
   {$DEFINE OTL_HasSystemTypes}
   {$DEFINE OTL_HasCorrectNativeInt}
-  {$DEFINE OTL_VariantHasInt64}
 {$IFEND}
 
 {$IF CompilerVersion >= 24} //DXE3
   {$DEFINE OTL_LongGetMethodInfo}
   {$DEFINE OTL_NameThreadHasStringParameter}
   {$DEFINE OTL_TypeInfoHasTypeData}
+  {$DEFINE OTL_VariantHasInt64}
 {$IFEND}
 
 {$IF CompilerVersion >= 25} //DXE4
