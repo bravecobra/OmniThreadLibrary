@@ -3307,7 +3307,7 @@ type
           Result := false;
           Exit;
         end;
-        if not regTarget.OpenKey(targetKey + Copy(key, 1, Length(SourceKey)), true) then begin
+        if not regTarget.OpenKey(targetKey + Copy(key, Length(sourceKey) + 1, MaxInt), true) then begin
           Result := false;
           Exit;
         end;

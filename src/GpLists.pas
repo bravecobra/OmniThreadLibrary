@@ -2685,7 +2685,7 @@ type
 function MyGrowCollection(OldCapacity, NewCount: integer): integer;
 {$ENDIF}
 
-{$IFNDEF xGpLists_HasAtomic} // used in an inline function, must be exported
+{$IFNDEF GpLists_HasAtomic} // used in an inline function, must be exported
 function InterlockedAdd(var Target: Integer; Value: Integer): Integer;
 {$ENDIF}
 
@@ -2708,7 +2708,7 @@ type
 
 { publics }
 
-{$IFNDEF xGpLists_HasAtomic}
+{$IFNDEF GpLists_HasAtomic}
 function InterlockedAdd(var Target: Integer; Value: Integer): Integer;
 var OldValue: Integer;
 begin
@@ -2718,7 +2718,7 @@ begin
   until Result = OldValue;
   Result := OldValue;
 end;
-{$ENDIF xGpLists_HasAtomic}
+{$ENDIF GpLists_HasAtomic}
 
 function IntegerCompare(avalue1, avalue2: integer): integer;
 begin
@@ -6522,6 +6522,7 @@ function TGpObjectRingBuffer.Enqueue(obj: TObject): boolean;
 begin
 {$IFDEF MSWINDOWS}
 {$WARN SYMBOL_PLATFORM OFF}
+{$ENDIF}
   Lock;
   try
     if InternalIsFull then
@@ -6535,6 +6536,7 @@ begin
       Result := true;
     end;
   finally Unlock; end;
+{$IFDEF MSWINDOWS}
 {$WARN SYMBOL_PLATFORM ON}
 {$ENDIF}
 end; { TGpObjectRingBuffer.Enqueue }
@@ -6612,6 +6614,7 @@ function TGpObjectRingBuffer.InternalDequeue: TObject;
 begin
 {$IFDEF MSWINDOWS}
 {$WARN SYMBOL_PLATFORM OFF}
+{$ENDIF}
   if IsEmpty then
     Result := nil
   else begin
@@ -6621,6 +6624,7 @@ begin
     if (BufferAlmostEmptyEvent <> 0) and (BufferAlmostEmptyThreshold = orbCount) then
       Win32Check(SetEvent(BufferAlmostEmptyEvent));
   end;
+{$IFDEF MSWINDOWS}
 {$WARN SYMBOL_PLATFORM ON}
 {$ENDIF}
 end; { TGpObjectRingBuffer.InternalDequeue }
@@ -6792,6 +6796,7 @@ function TGpRingBuffer<T>.Enqueue(const item: T): boolean;
 begin
 {$IFDEF MSWINDOWS}
 {$WARN SYMBOL_PLATFORM OFF}
+{$ENDIF}
   Lock;
   try
     if InternalIsFull then
@@ -6805,6 +6810,7 @@ begin
       Result := true;
     end;
   finally Unlock; end;
+{$IFDEF MSWINDOWS}
 {$WARN SYMBOL_PLATFORM ON}
 {$ENDIF}
 end; { TGpRingBuffer<T>.Enqueue }
@@ -6874,6 +6880,7 @@ function TGpRingBuffer<T>.InternalDequeue(var item: T): boolean;
 begin
 {$IFDEF MSWINDOWS}
 {$WARN SYMBOL_PLATFORM OFF}
+{$ENDIF}
   Result := not IsEmpty;
   if Result then begin
     item := orbBuffer[orbTail];
@@ -6882,6 +6889,7 @@ begin
     if (BufferAlmostEmptyEvent <> 0) and (BufferAlmostEmptyThreshold = orbCount) then
       Win32Check(SetEvent(BufferAlmostEmptyEvent));
   end;
+{$IFDEF MSWINDOWS}
 {$WARN SYMBOL_PLATFORM ON}
 {$ENDIF}
 end; { TGpRingBuffer<T>.InternalDequeue }
