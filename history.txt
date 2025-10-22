@@ -1,4 +1,17 @@
-3.07.10: <<unreleased>>
+3.07.11: 2025-10-22
+
+- New features:
+  - Added Delphi 13 packages supporting 64-bit IDE.
+  - Implemented TOmniValue.AsUInt64.
+  
+- Bug fixes:
+  - [SMelnyk64] Fix: AV in TOmniParallelLoopBase.InternalExecute when taskFinalizer is not provided.
+  - Fixed TOmniGroupAffinity.Create with 64 processors on 64-bit.    
+  - Use correct time-measurement functions in OtlEventMonitor.
+  - [Anton Alisov] Fixed critical section handling in TOmniValueQueue.DoWithCritSec. 
+  - Avoid range check in OtlThreadPool on 64 CPU systems.
+
+3.07.10: 2023-11-27
 
 - New features:
   - Implemented TOmniValue.AsUInt64.
